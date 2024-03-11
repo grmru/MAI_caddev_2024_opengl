@@ -7,4 +7,9 @@
     <!-- <Nullable>enable</Nullable> -->
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NPOI" Version="2.6.2" />
+    <PackageReference Include="OpenTK" Version="4.8.2" />
+  </ItemGroup>
+
 </Project>
