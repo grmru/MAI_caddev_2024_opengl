@@ -67,6 +67,9 @@ void main()
     private float _pitch;
     private float _yaw;
 
+    private bool _firstMove = true;
+    private Vector2 _lastPos;
+    const float _sensitivity = 0.2f;
     protected override void OnUpdateFrame(FrameEventArgs e)
     {
         base.OnUpdateFrame(e);
@@ -74,6 +77,29 @@ void main()
         if (KeyboardState.IsKeyDown(Keys.Escape))
         {
             Close();
+        }
+
+        if (MouseState.IsButtonDown(MouseButton.Left))
+        {
+            if (_firstMove)
+            {
+                _lastPos = new Vector2(MouseState.X, MouseState.Y);
+                _firstMove = false;
+            }
+            else
+            {
+                var deltaX = MouseState.X - _lastPos.X;
+                var deltaY = MouseState.Y - _lastPos.Y;
+                _lastPos = new Vector2(MouseState.X, MouseState.Y);
+
+                _yaw += deltaX * _sensitivity;
+                _pitch -= deltaY * _sensitivity;
+            }
+
+        }
+        if (MouseState.IsButtonReleased(MouseButton.Left))
+        {
+            _firstMove = true;
         }
     }
 
@@ -132,7 +158,7 @@ void main()
 
     protected override void OnRenderFrame(FrameEventArgs e)
     {
-        _yaw += 128.0f * (float)e.Time;
+        //_yaw += 128.0f * (float)e.Time;
 
         base.OnRenderFrame(e);
 
