@@ -1,4 +1,5 @@
 using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -15,7 +16,7 @@ public class Core : GameWindow
               Title = title 
            }) 
     {
-
+        _aspectRatio = (float)width / (float)height;
     }
 
     float[] vertices = {
@@ -35,9 +36,13 @@ public class Core : GameWindow
 #version 330 core
 layout (location = 0) in vec3 aPosition;
 
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+
 void main()
 {
-    gl_Position = vec4(aPosition, 1.0);
+    gl_Position = vec4(aPosition, 1.0) * model * view * projection;
 }
 ";
 
@@ -50,6 +55,17 @@ void main()
     FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
 }
 ";
+
+
+    float _aspectRatio = new float();
+    float _fov = MathHelper.PiOver2;
+
+    private Vector3 _position_model { get; set; } = new Vector3(0.0f, 0.0f, 0.0f);
+    private Vector3 _position_eye { get; set; } = new Vector3(0.0f, 0.0f, 1.5f);
+    private Vector3 _up { get; set; } = new Vector3(0.0f, 1.0f, 0.0f);
+
+    private float _pitch;
+    private float _yaw;
 
     protected override void OnUpdateFrame(FrameEventArgs e)
     {
@@ -116,11 +132,34 @@ void main()
 
     protected override void OnRenderFrame(FrameEventArgs e)
     {
+        _yaw += 128.0f * (float)e.Time;
+
         base.OnRenderFrame(e);
 
         GL.Clear(ClearBufferMask.ColorBufferBit);
 
-        //Code goes here.
+        var model = Matrix4.Identity * 
+            Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(_yaw)) * 
+            Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(-_pitch));
+        
+        var view = Matrix4.LookAt(_position_eye, _position_model, _up);
+        var projection = Matrix4.CreatePerspectiveFieldOfView(_fov, _aspectRatio, 0.01f, 100f);
+
+
+        var key0 = GL.GetActiveUniform(_ProgramHandle, 0, out _, out _);
+        var location0 = GL.GetUniformLocation(_ProgramHandle, key0);
+
+        var key1 = GL.GetActiveUniform(_ProgramHandle, 1, out _, out _);
+        var location1 = GL.GetUniformLocation(_ProgramHandle, key1);
+
+        var key2 = GL.GetActiveUniform(_ProgramHandle, 2, out _, out _);
+        var location2 = GL.GetUniformLocation(_ProgramHandle, key2);
+
+        GL.UseProgram(_ProgramHandle);
+
+        GL.UniformMatrix4(location0, true, ref model);
+        GL.UniformMatrix4(location1, true, ref view);
+        GL.UniformMatrix4(location2, true, ref projection);
 
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
 
@@ -130,7 +169,9 @@ void main()
     protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
     {
         base.OnFramebufferResize(e);
-
+        
         GL.Viewport(0, 0, e.Width, e.Height);
+
+        _aspectRatio = Size.X / (float)Size.Y;
     }
 }
